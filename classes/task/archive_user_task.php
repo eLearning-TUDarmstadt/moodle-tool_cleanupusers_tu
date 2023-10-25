@@ -83,6 +83,7 @@ class archive_user_task extends scheduled_task {
 
         $result = $this->change_user_deprovisionstatus($reactivatearray, 'reactivate');
         $unabletoactivate = $result['failures'];
+        $useractivated = $suspendresult['countersuccess'];
 
         $deleteresult = $this->change_user_deprovisionstatus($arraytodelete, 'delete');
         $unabletodelete = $deleteresult['failures'];
@@ -93,7 +94,8 @@ class archive_user_task extends scheduled_task {
         $admin = get_admin();
         // Number of users suspended or deleted.
         $messagetext = get_string('e-mail-archived', 'tool_cleanupusers', $userarchived) .
-            "\r\n" .get_string('e-mail-deleted', 'tool_cleanupusers', $userdeleted);
+            "\r\n" .get_string('e-mail-deleted', 'tool_cleanupusers', $userdeleted) .
+            "\r\n" .get_string('e-mail-activated', 'tool_cleanupusers', $useractivated);
 
         // No Problems occured during the cron-job.
         if (empty($unabletoactivate) && empty($unabletoarchive) && empty($unabletodelete)) {
