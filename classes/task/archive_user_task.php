@@ -83,7 +83,7 @@ class archive_user_task extends scheduled_task {
 
         $result = $this->change_user_deprovisionstatus($reactivatearray, 'reactivate');
         $unabletoactivate = $result['failures'];
-        $useractivated = $suspendresult['countersuccess'];
+        $useractivated = $result['countersuccess'];
 
         $deleteresult = $this->change_user_deprovisionstatus($arraytodelete, 'delete');
         $unabletodelete = $deleteresult['failures'];
