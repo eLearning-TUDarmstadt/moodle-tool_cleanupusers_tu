@@ -161,7 +161,7 @@ class archive_user_task extends scheduled_task {
                         // No default since if-clause checks the intention parameter.
                     }
                     $countersuccess++;
-                } catch (cleanupusers_exception $e) {
+                } catch (\Throwable $e) {
                     $failures[$key] = $user->id;
                 }
             }

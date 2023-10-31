@@ -133,28 +133,30 @@ class archiveduser {
      */
     public function activate_me() {
         global $DB;
-        $transaction = $DB->start_delegated_transaction();
-        $user = \core_user::get_user($this->id);
+        try {
+            $transaction = $DB->start_delegated_transaction();
+            // Deletes record of plugin table tool_cleanupusers.
+            if (!$DB->record_exists('tool_cleanupusers', array('id' => $this->id))) {
+                throw new cleanupusers_exception("Failed to reactivate " . $this->username . " : user not found in tool_cleanupusers");
+            } else if (!$DB->record_exists('tool_cleanupusers_archive', array('id' => $this->id))) {
+                throw new cleanupusers_exception("Failed to reactivate " . $this->username . " : user not found in tool_cleanupusers_archive");
+            } else if ($DB->record_exists('user', array('username' => $this->username))) {
+                throw new cleanupusers_exception("Failed to reactivate " . $this->username . " : user already in user table");
+            } else {
+                // Both record exist, so we have a user which can be reactivated.
+                // If the user is in table replace data.
+                $shadowuser = $DB->get_record('tool_cleanupusers_archive', array('id' => $this->id));
 
-        // Deletes record of plugin table tool_cleanupusers.
-        if (!$DB->record_exists('tool_cleanupusers', array('id' => $user->id))) {
-            throw new cleanupusers_exception(get_string('errormessagenotactive', 'tool_cleanupusers'));
-        } else if (!$DB->record_exists('tool_cleanupusers_archive', array('id' => $user->id))) {
-            throw new cleanupusers_exception(get_string('errormessagenotactive', 'tool_cleanupusers'));
-        } else if ($DB->record_exists('user', array('username' => $this->username))) {
-            throw new cleanupusers_exception(get_string('errormessagenotactive', 'tool_cleanupusers'));
-        } else {
-            // Both record exist so we have a user which can be reactivated.
-            $DB->delete_records('tool_cleanupusers', array('id' => $user->id));
-            // If the user is in table replace data.
-            $shadowuser = $DB->get_record('tool_cleanupusers_archive', array('id' => $user->id));
-
-            $DB->update_record('user', $shadowuser);
-            // Delete records from tool_cleanupusers_archive table.
-            $DB->delete_records('tool_cleanupusers_archive', array('id' => $user->id));
+                user_update_user($shadowuser, false);
+                // Delete records from tool_cleanupusers and tool_cleanupusers_archive tables.
+                $DB->delete_records('tool_cleanupusers', array('id' => $this->id));
+                $DB->delete_records('tool_cleanupusers_archive', array('id' => $this->id));
+            }
+            $transaction->allow_commit();
         }
-        // Gets the new user for additional checks.
-        $transaction->allow_commit();
+         catch (\Throwable $e) {
+            $transaction->rollback($e);
+        }
     }
 
     /**
