@@ -72,7 +72,8 @@ class archiveduser {
 
     /**
      * Suspends the user.
-     * Therefore, makes an entry in tool_cleanupusers and tool_cleanupusers_archive tables.
+     * Therefore, makes an entry in tool_cleanupusers and tool_cleanupusers_archive tables. Throws an exception when the user
+     * is already suspended.
      * @throws \Throwable
      */
     public function archive_me() {
@@ -81,19 +82,20 @@ class archiveduser {
             // Get the current user.
             $user = \core_user::get_user($this->id);
             $transaction = $DB->start_delegated_transaction();
-            // Only apply to users with correct name.
-            if ($user->username == \core_user::clean_field($user->username, 'username')) {
+            if ($user->suspended == 1) {
+                throw new cleanupusers_exception("Failed to suspend " . $user->username . " : user already suspended");
+            } else if (!($user->username == \core_user::clean_field($user->username, 'username'))) {
+                throw new cleanupusers_exception("Failed to suspend " . $user->username . " : username is not cleaned");
+            } else {
                 // We are already getting the shadowuser here to keep the original suspended status.
                 $shadowuser = clone $user;
-                // In case the user was not suspended previously he/she might be logged in we kill his/her session.
-                if ($user->suspended == 0) {
-                    $user->suspended = 1;
-                    manager::kill_user_sessions($user->id);
-                    user_update_user($user, false);
-                }
-                $timestamp = time();
+                // The user might be logged in, so we must kill his/her session.
+                $user->suspended = 1;
+                manager::kill_user_sessions($user->id);
+                user_update_user($user, false);
                 // Document time of editing user in Database.
                 // In case there is no entry in the tool table make a new one.
+                $timestamp = time();
                 if (!$DB->record_exists('tool_cleanupusers', array('id' => $user->id))) {
                     $DB->insert_record_raw('tool_cleanupusers', array('id' => $user->id, 'archived' => 1,
                         'timestamp' => $timestamp), true, false, true);
