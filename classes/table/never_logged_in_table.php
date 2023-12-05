@@ -35,8 +35,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class never_logged_in_table extends \table_sql {
-
-
     /**
      * Constructor.
      * @param array $users
@@ -47,12 +45,12 @@ class never_logged_in_table extends \table_sql {
     public function __construct($users, $sqlwhere, $param) {
         parent::__construct('tool_cleanupusers_never_logged_in_table');
         // Define the list of columns to show.
-        $columns = array('id', 'username', 'fullname', 'suspended', 'deleted');
+        $columns = ['id', 'username', 'fullname', 'suspended', 'deleted'];
         $this->define_columns($columns);
 
         // Define the titles of columns to show in header.
-        $headers = array(get_string('id', 'tool_cleanupusers'), get_string('Neverloggedin', 'tool_cleanupusers'),
-            get_string('fullname'), get_string('Archived', 'tool_cleanupusers'), 'Archive');
+        $headers = [get_string('id', 'tool_cleanupusers'), get_string('Neverloggedin', 'tool_cleanupusers'),
+            get_string('fullname'), get_string('Archived', 'tool_cleanupusers'), 'Archive'];
         $this->define_headers($headers);
 
         $idsasstring = '';
@@ -66,7 +64,7 @@ class never_logged_in_table extends \table_sql {
             $where .= ' AND ' . $sqlwhere;
         }
 
-        $this->set_sql('id, username, lastaccess, suspended, ' .implode(', ', fields::get_name_fields()), '{user}', $where, $param);
+        $this->set_sql('id, username, lastaccess, suspended, ' . implode(', ', fields::get_name_fields()), '{user}', $where, $param);
     }
 
     /**
@@ -93,15 +91,27 @@ class never_logged_in_table extends \table_sql {
         if ($values->suspended == 0) {
             $url = new \moodle_url('/admin/tool/cleanupusers/handleuser.php', ['userid' => $values->id, 'action' => 'suspend']);
 
-            return \html_writer::link($url,
-                $OUTPUT->pix_icon('t/removecontact', get_string('hideuser', 'tool_cleanupusers'), 'moodle',
-                    ['class' => "imggroup-" . $values->id]));
+            return \html_writer::link(
+                $url,
+                $OUTPUT->pix_icon(
+                    't/removecontact',
+                    get_string('hideuser', 'tool_cleanupusers'),
+                    'moodle',
+                    ['class' => "imggroup-" . $values->id]
+                )
+            );
         } else {
             $url = new \moodle_url('/admin/tool/cleanupusers/handleuser.php', ['userid' => $values->id, 'action' => 'reactivate']);
 
-            return \html_writer::link($url,
-                $OUTPUT->pix_icon('t/reload', get_string('hideuser', 'tool_cleanupusers'), 'moodle',
-                    ['class' => "imggroup-" . $values->id]));
+            return \html_writer::link(
+                $url,
+                $OUTPUT->pix_icon(
+                    't/reload',
+                    get_string('hideuser', 'tool_cleanupusers'),
+                    'moodle',
+                    ['class' => "imggroup-" . $values->id]
+                )
+            );
         }
     }
 }

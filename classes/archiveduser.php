@@ -24,10 +24,10 @@ namespace tool_cleanupusers;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot.'/user/lib.php');
-require_once($CFG->dirroot.'/lib/moodlelib.php');
+require_once($CFG->dirroot . '/user/lib.php');
+require_once($CFG->dirroot . '/lib/moodlelib.php');
 
-use \core\session\manager;
+use core\session\manager;
 /**
  * The class collects the necessary information to suspend, delete and activate users.
  *
@@ -38,7 +38,6 @@ use \core\session\manager;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class archiveduser {
-
     /** @var int The id of the user */
     public $id;
 
@@ -96,13 +95,13 @@ class archiveduser {
                 // Document time of editing user in Database.
                 // In case there is no entry in the tool table make a new one.
                 $timestamp = time();
-                if (!$DB->record_exists('tool_cleanupusers', array('id' => $user->id))) {
-                    $DB->insert_record_raw('tool_cleanupusers', array('id' => $user->id, 'archived' => 1,
-                        'timestamp' => $timestamp), true, false, true);
+                if (!$DB->record_exists('tool_cleanupusers', ['id' => $user->id])) {
+                    $DB->insert_record_raw('tool_cleanupusers', ['id' => $user->id, 'archived' => 1,
+                        'timestamp' => $timestamp], true, false, true);
                 }
                 // Insert copy of user in second DB and replace user in main table when entry was successful.
-                if ($DB->record_exists('tool_cleanupusers_archive', array('id' => $shadowuser->id))) {
-                    $DB->delete_records('tool_cleanupusers_archive', array('id' => $shadowuser->id));
+                if ($DB->record_exists('tool_cleanupusers_archive', ['id' => $shadowuser->id])) {
+                    $DB->delete_records('tool_cleanupusers_archive', ['id' => $shadowuser->id]);
                 }
                 $DB->insert_record_raw('tool_cleanupusers_archive', $shadowuser, true, false, true);
                 // Replaces the current user with a pseudo_user that has no reference.
@@ -127,19 +126,19 @@ class archiveduser {
             $user = \core_user::get_user($this->id);
             $transaction = $DB->start_delegated_transaction();
             // User was suspended by the plugin.
-            if ($DB->record_exists('tool_cleanupusers', array('id' => $user->id))) {
-                if (!$DB->record_exists('tool_cleanupusers_archive', array('id' => $user->id))) {
+            if ($DB->record_exists('tool_cleanupusers', ['id' => $user->id])) {
+                if (!$DB->record_exists('tool_cleanupusers_archive', ['id' => $user->id])) {
                     throw new cleanupusers_exception("Failed to reactivate " . $user->username . " : user suspended by plugin has no entry in archive");
-                } else if ($DB->record_exists('user', array('username' => $user->username))) {
+                } else if ($DB->record_exists('user', ['username' => $user->username])) {
                     throw new cleanupusers_exception("Failed to reactivate " . $user->username . " : user suspended by plugin already in user table");
                 } else {
                     // Both records exist, so we have a user which can be reactivated.
                     // If the user is in table replace data.
-                    $shadowuser = $DB->get_record('tool_cleanupusers_archive', array('id' => $user->id));
+                    $shadowuser = $DB->get_record('tool_cleanupusers_archive', ['id' => $user->id]);
                     user_update_user($shadowuser, false);
                     // Delete records from tool_cleanupusers and tool_cleanupusers_archive tables.
-                    $DB->delete_records('tool_cleanupusers', array('id' => $user->id));
-                    $DB->delete_records('tool_cleanupusers_archive', array('id' => $user->id));
+                    $DB->delete_records('tool_cleanupusers', ['id' => $user->id]);
+                    $DB->delete_records('tool_cleanupusers_archive', ['id' => $user->id]);
                 }
             }
             // User was suspended manually.
@@ -148,8 +147,7 @@ class archiveduser {
                 user_update_user($user, false);
             }
             $transaction->allow_commit();
-        }
-        catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             $transaction->rollback($e);
         }
     }
@@ -171,13 +169,13 @@ class archiveduser {
             $user = \core_user::get_user($this->id);
             $transaction = $DB->start_delegated_transaction();
             // User was suspended by the plugin.
-            if ($DB->record_exists('tool_cleanupusers', array('id' => $user->id))) {
-                if (!$DB->record_exists('tool_cleanupusers_archive', array('id' => $user->id))) {
+            if ($DB->record_exists('tool_cleanupusers', ['id' => $user->id])) {
+                if (!$DB->record_exists('tool_cleanupusers_archive', ['id' => $user->id])) {
                     throw new cleanupusers_exception("Failed to delete " . $user->username . " : user suspended by plugin has no entry in archive");
                 } else {
                     // Deletes the records in both plugin tables.
-                    $DB->delete_records('tool_cleanupusers', array('id' => $user->id));
-                    $DB->delete_records('tool_cleanupusers_archive', array('id' => $user->id));
+                    $DB->delete_records('tool_cleanupusers', ['id' => $user->id]);
+                    $DB->delete_records('tool_cleanupusers_archive', ['id' => $user->id]);
                 }
             }
             // User was suspended manually.
@@ -188,7 +186,7 @@ class archiveduser {
             $newusername = hash('md5', $user->username);
             // Checks whether the username already exist (possible but unlikely).
             // In the unlikely case that hash(username) exist in the table, while loop generates new username.
-            while ($DB->record_exists('user', array("username" => $newusername))) {
+            while ($DB->record_exists('user', ["username" => $newusername])) {
                 $tempname = $newusername;
                 $newusername = hash('md5', $user->username . $tempname);
             }

@@ -36,7 +36,6 @@ use userstatus_userstatuswwu\userstatuswwu;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class userstatus_userstatuswwu_test extends advanced_testcase {
-
     /**
      * Generates the data from the generator.
      * @return mixed
@@ -59,9 +58,11 @@ class userstatus_userstatuswwu_test extends advanced_testcase {
         $this->assertFileExists($CFG->dirroot .
             '/admin/tool/cleanupusers/userstatus/userstatuswwu/tests/fixtures/groups_excerpt_short.txt');
 
-        $myuserstatuschecker = new userstatuswwu($CFG->dirroot .
+        $myuserstatuschecker = new userstatuswwu(
+            $CFG->dirroot .
             '/admin/tool/cleanupusers/userstatus/userstatuswwu/tests/fixtures/groups_excerpt_short.txt',
-            array('member_group' => 'member_group', 'member' => 'member'));
+            ['member_group' => 'member_group', 'member' => 'member']
+        );
         // Calls for plugin function to return array.
         $returnsuspend = $myuserstatuschecker->get_to_suspend();
         $returndelete = $myuserstatuschecker->get_to_delete();
@@ -149,7 +150,6 @@ class userstatus_userstatuswwu_test extends advanced_testcase {
         // S_other07 was previously in a valid group and listet as to reactivate is now also deleted.
         $this->assertEquals($data['s_other07']->id, $returndelete[$data['s_other07']->id]->id);
         $this->resetAfterTest(true);
-
     }
     /**
      * Sets Config pathtotxt of the userstatuswwu plugin and assures the class constructor works without setting the
@@ -161,9 +161,12 @@ class userstatus_userstatuswwu_test extends advanced_testcase {
 
         $this->assertFileExists($CFG->dirroot .
             '/admin/tool/cleanupusers/userstatus/userstatuswwu/tests/fixtures/groups_excerpt_short.txt');
-        set_config('pathtotxt', $CFG->dirroot .
+        set_config(
+            'pathtotxt',
+            $CFG->dirroot .
             '/admin/tool/cleanupusers/userstatus/userstatuswwu/tests/fixtures/groups_excerpt_short.txt',
-            'userstatus_userstatuswwu');
+            'userstatus_userstatuswwu'
+        );
         $userstatuswwu = new userstatuswwu();
         $returnsuspend = $userstatuswwu->get_to_suspend();
         $returndelete = $userstatuswwu->get_to_delete();
@@ -201,9 +204,10 @@ class userstatus_userstatuswwu_test extends advanced_testcase {
 
         $this->expectException('userstatus_userstatuswwu\userstatuswwu_exception');
         $this->expectExceptionMessage('The reference to the .txt could not be found.');
-        new userstatuswwu($CFG->dirroot . '/somenotexistingpath.txt',
-            array('member_group' => 'member_group', 'member' => 'member'));
-
+        new userstatuswwu(
+            $CFG->dirroot . '/somenotexistingpath.txt',
+            ['member_group' => 'member_group', 'member' => 'member']
+        );
     }
 
     /**
@@ -221,6 +225,6 @@ class userstatus_userstatuswwu_test extends advanced_testcase {
      */
     public function test_user_table_was_reset() {
         global $DB;
-        $this->assertEquals(2, $DB->count_records('user', array()));
+        $this->assertEquals(2, $DB->count_records('user', []));
     }
 }
