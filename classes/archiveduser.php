@@ -71,8 +71,8 @@ class archiveduser {
 
     /**
      * Suspends the user.
-     * Therefore, makes an entry in tool_cleanupusers and tool_cleanupusers_archive tables. Throws an exception when the user
-     * is already suspended.
+     * Therefore, makes an entry in tool_cleanupusers and tool_cleanupusers_archive tables.
+     * Throws an exception when the user is already suspended.
      * @throws \Throwable
      */
     public function archive_me() {
@@ -82,9 +82,11 @@ class archiveduser {
             $user = \core_user::get_user($this->id);
             $transaction = $DB->start_delegated_transaction();
             if ($user->suspended == 1) {
-                throw new cleanupusers_exception("Failed to suspend " . $user->username . " : user already suspended");
+                throw new cleanupusers_exception("Failed to suspend " . $user->username .
+                    " : user is already suspended");
             } else if (!($user->username == \core_user::clean_field($user->username, 'username'))) {
-                throw new cleanupusers_exception("Failed to suspend " . $user->username . " : username is not cleaned");
+                throw new cleanupusers_exception("Failed to suspend " . $user->username .
+                    " : username is not cleaned");
             } else {
                 // We are already getting the shadowuser here to keep the original suspended status.
                 $shadowuser = clone $user;
@@ -116,7 +118,7 @@ class archiveduser {
 
     /**
      * Reactivates the user.
-     * Therefore, deletes the entry in the tool_cleanupusers table and throws an exception when no entry is available (if suspended by the plugin).
+     * Therefore, deletes the entry in the tool_cleanupusers table and throws an exception when no entry is available.
      * @throws \Throwable
      */
     public function activate_me() {
@@ -128,23 +130,27 @@ class archiveduser {
             // User was suspended by the plugin.
             if ($DB->record_exists('tool_cleanupusers', ['id' => $user->id])) {
                 if (!$DB->record_exists('tool_cleanupusers_archive', ['id' => $user->id])) {
-                    throw new cleanupusers_exception("Failed to reactivate " . $user->username . " : user suspended by plugin has no entry in archive");
-                } else if ($DB->record_exists('user', ['username' => $user->username])) {
-                    throw new cleanupusers_exception("Failed to reactivate " . $user->username . " : user suspended by plugin already in user table");
+                    throw new cleanupusers_exception("Failed to reactivate " . $user->username .
+                        " : user suspended by the plugin has no entry in archive");
                 } else {
-                    // Both records exist, so we have a user which can be reactivated.
-                    // If the user is in table replace data.
                     $shadowuser = $DB->get_record('tool_cleanupusers_archive', ['id' => $user->id]);
-                    user_update_user($shadowuser, false);
-                    // Delete records from tool_cleanupusers and tool_cleanupusers_archive tables.
-                    $DB->delete_records('tool_cleanupusers', ['id' => $user->id]);
-                    $DB->delete_records('tool_cleanupusers_archive', ['id' => $user->id]);
+                    if ($DB->record_exists('user', ['username' => $shadowuser->username])) {
+                        throw new cleanupusers_exception("Failed to reactivate " . $user->username .
+                            " : user suspended by the plugin already in user table");
+                    } else {
+                        // Both records exist, so we have a user which can be reactivated.
+                        // If the user is in table replace data.
+
+                        user_update_user($shadowuser, false);
+                        // Delete records from tool_cleanupusers and tool_cleanupusers_archive tables.
+                        $DB->delete_records('tool_cleanupusers', ['id' => $user->id]);
+                        $DB->delete_records('tool_cleanupusers_archive', ['id' => $user->id]);
+                    }
                 }
-            }
-            // User was suspended manually.
-            else {
-                $user->suspended = 0;
-                user_update_user($user, false);
+            } else {
+                // User was suspended manually.
+                throw new cleanupusers_exception("Failed to reactivate " . $user->username .
+                    " : user not suspended by the plugin");
             }
             $transaction->allow_commit();
         } catch (\Throwable $e) {
@@ -156,7 +162,7 @@ class archiveduser {
      * Deletes the user.
      *
      * Therefore,
-     * (1) Deletes the entry in the tool_cleanupusers and the tool_cleanupusers_archive tables (if suspended by the plugin).
+     * (1) Deletes the entry in the tool_cleanupusers and the tool_cleanupusers_archive tables.
      * (2) Hashes the username with the sha256 function.
      * (3) Calls the moodle core delete_user function.
      *
@@ -171,16 +177,17 @@ class archiveduser {
             // User was suspended by the plugin.
             if ($DB->record_exists('tool_cleanupusers', ['id' => $user->id])) {
                 if (!$DB->record_exists('tool_cleanupusers_archive', ['id' => $user->id])) {
-                    throw new cleanupusers_exception("Failed to delete " . $user->username . " : user suspended by plugin has no entry in archive");
+                    throw new cleanupusers_exception("Failed to delete " . $user->username .
+                        " : user suspended by the plugin has no entry in archive");
                 } else {
                     // Deletes the records in both plugin tables.
                     $DB->delete_records('tool_cleanupusers', ['id' => $user->id]);
                     $DB->delete_records('tool_cleanupusers_archive', ['id' => $user->id]);
                 }
-            }
-            // User was suspended manually.
-            else {
-                // Nothing to delete in plugin tables.
+            } else {
+                // User was suspended manually.
+                throw new cleanupusers_exception("Failed to delete " . $user->username .
+                    " : user not suspended by the plugin");
             }
             // To secure that plugins that reference the user table do not fail create empty user with a hash as username.
             $newusername = hash('md5', $user->username);

@@ -62,18 +62,21 @@ class tool_cleanupusers_generator extends testing_data_generator {
 
         $user = $generator->create_user(['username' => 'user', 'lastaccess' => $tendaysago, 'suspended' => '0']);
         $user->realusername = $user->username;
+
         $userneverloggedin = $generator->create_user(['username' => 'userneverloggedin',
             'suspended' => '0']);
         $userneverloggedin->realusername = $userneverloggedin->username;
+
         $useroneyearnotloggedin = $generator->create_user(['username' => 'useroneyearnotloggedin',
             'lastaccess' => $timestamponeyearago, 'suspended' => '0']);
         $useroneyearnotloggedin->realusername = $userneverloggedin->username;
+
         $usersuspendedbypluginandmanually = $generator->create_user(['username' => 'anonym-x', 'suspended' => '1']);
-        $usersuspendedbypluginandmanually->realusername = 'Somerealusername';
+        $usersuspendedbypluginandmanually->realusername = 'somerealusername';
         $DB->insert_record_raw('tool_cleanupusers', ['id' => $usersuspendedbypluginandmanually->id, 'archived' => 1,
             'timestamp' => $tendaysago], true, false, true);
         $DB->insert_record_raw('tool_cleanupusers_archive', ['id' => $usersuspendedbypluginandmanually->id,
-            'username' => 'Somerealusername', 'suspended' => $usersuspendedbypluginandmanually->suspended,
+            'username' => 'somerealusername', 'suspended' => $usersuspendedbypluginandmanually->suspended,
             'lastaccess' => $tendaysago], true, false, true);
 
         $usersuspendedmanually = $generator->create_user(['username' => 'usersuspendedmanually', 'suspended' => '1']);
@@ -112,6 +115,7 @@ class tool_cleanupusers_generator extends testing_data_generator {
         $userduplicatedname = $generator->create_user(['username' => 'duplicatedname',
             'suspended' => '0', 'firstname' => 'Anonym']);
         $userduplicatedname->realusername = $userduplicatedname->username;
+
         $originaluser = $generator->create_user(['username' => 'anonym-z',
             'suspended' => '1', 'firstname' => 'Anonym']);
         $originaluser->realusername = $userduplicatedname->username;
@@ -126,16 +130,16 @@ class tool_cleanupusers_generator extends testing_data_generator {
         $DB->insert_record_raw('tool_cleanupusers', ['id' => $originaluser->id, 'archived' => true,
             'timestamp' => $tendaysago], true, false, true);
 
-        $data['user'] = $user;  // logged in recently, no action
-        $data['userdeleted'] = $userdeleted;    // already deleted, filtered by cronjob
-        $data['originaluser'] = $originaluser;  // cannot reactivate, username busy
-        $data['userneverloggedin'] = $userneverloggedin;    // never logged in, no action
-        $data['userduplicatedname'] = $userduplicatedname;  // never logged in, no action
-        $data['useroneyearnotloggedin'] = $useroneyearnotloggedin;  // suspend
-        $data['usersuspendedmanually'] = $usersuspendedmanually;    // not marked by timechecker?, no action
-        $data['usersuspendedbyplugin'] = $usersuspendedbyplugin;    // delete
-        $data['userinconsistentsuspended'] = $userinconsistentsuspended;    // cannot suspend, suspended = 1 already
-        $data['usersuspendedbypluginandmanually'] = $usersuspendedbypluginandmanually;  // reactivate
+        $data['user'] = $user;  // Logged in recently, no action.
+        $data['userdeleted'] = $userdeleted;    // Already deleted, filtered by cronjob.
+        $data['originaluser'] = $originaluser;  // Cannot reactivate, username busy.
+        $data['userneverloggedin'] = $userneverloggedin;    // Never logged in, no action.
+        $data['userduplicatedname'] = $userduplicatedname;  // Never logged in, no action.
+        $data['useroneyearnotloggedin'] = $useroneyearnotloggedin;  // Suspend.
+        $data['usersuspendedmanually'] = $usersuspendedmanually;    // Not marked by timechecker?, no action.
+        $data['usersuspendedbyplugin'] = $usersuspendedbyplugin;    // Delete.
+        $data['userinconsistentsuspended'] = $userinconsistentsuspended;    // Cannot suspend, suspended = 1 already.
+        $data['usersuspendedbypluginandmanually'] = $usersuspendedbypluginandmanually;  // Reactivate.
 
         return $data; // Return the user, course and group objects.
     }

@@ -21,7 +21,10 @@
  * @copyright  2016/17 N Herrmann
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-use userstatus_timechecker\timechecker;
+
+namespace userstatus_timechecker;
+use advanced_testcase;
+
 /**
  * The class contains a test script for the moodle userstatus_timechecker
  *
@@ -30,6 +33,12 @@ use userstatus_timechecker\timechecker;
  * @group      tool_cleanupusers_timechecker
  * @copyright  2016/17 N Herrmann
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @covers \userstatus_timechecker\timechecker::get_to_suspend()
+ * @covers \userstatus_timechecker\timechecker::get_never_logged_in()
+ * @covers \userstatus_timechecker\timechecker::get_to_delete()
+ * @covers \userstatus_timechecker\timechecker::get_to_reactivate()
+ *
  */
 class userstatus_timechecker_test extends advanced_testcase {
     /**

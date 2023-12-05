@@ -22,8 +22,9 @@
  * @copyright  2017 N Herrmann
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-defined('MOODLE_INTERNAL') || die();
-use userstatus_userstatuswwu\userstatuswwu;
+
+namespace userstatus_userstatuswwu;
+use advanced_testcase;
 
 /**
  * The class contains a test script for the moodle userstatus_userstatuswwu
@@ -34,6 +35,12 @@ use userstatus_userstatuswwu\userstatuswwu;
  * @group      tool_cleanupusers_userstatuswwu
  * @copyright  2017 N Herrmann
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
+ * @covers \userstatus_userstatuswwu\userstatuswwu::get_to_suspend()
+ * @covers \userstatus_userstatuswwu\userstatuswwu::get_never_logged_in()
+ * @covers \userstatus_userstatuswwu\userstatuswwu::get_to_delete()
+ * @covers \userstatus_userstatuswwu\userstatuswwu::get_to_reactivate()
+ *
  */
 class userstatus_userstatuswwu_test extends advanced_testcase {
     /**

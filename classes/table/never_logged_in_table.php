@@ -25,8 +25,6 @@ namespace tool_cleanupusers\table;
 
 use core_user\fields;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Create a class for a custom sql_table for the tool_cleanupusers
  *
@@ -64,7 +62,10 @@ class never_logged_in_table extends \table_sql {
             $where .= ' AND ' . $sqlwhere;
         }
 
-        $this->set_sql('id, username, lastaccess, suspended, ' . implode(', ', fields::get_name_fields()), '{user}', $where, $param);
+        $this->set_sql('id, username, lastaccess, suspended, ' . implode(
+            ', ',
+            fields::get_name_fields()
+        ), '{user}', $where, $param);
     }
 
     /**
