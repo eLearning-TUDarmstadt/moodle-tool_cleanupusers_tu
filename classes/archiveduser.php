@@ -73,89 +73,80 @@ class archiveduser {
      * Suspends the user.
      * Therefore, makes an entry in tool_cleanupusers and tool_cleanupusers_archive tables.
      * Throws an exception when the user is already suspended.
-     * @throws \Throwable
+     * @throws cleanupusers_exception
      */
     public function archive_me() {
         global $DB;
-        try {
-            // Get the current user.
-            $user = \core_user::get_user($this->id);
-            $transaction = $DB->start_delegated_transaction();
-            if ($user->suspended == 1) {
-                throw new cleanupusers_exception("Failed to suspend " . $user->username .
-                    " : user is already suspended");
-            } else if (!($user->username == \core_user::clean_field($user->username, 'username'))) {
-                throw new cleanupusers_exception("Failed to suspend " . $user->username .
-                    " : username is not cleaned");
-            } else {
-                // We are already getting the shadowuser here to keep the original suspended status.
-                $shadowuser = clone $user;
-                // The user might be logged in, so we must kill his/her session.
-                $user->suspended = 1;
-                manager::kill_user_sessions($user->id);
-                user_update_user($user, false);
-                // Document time of editing user in Database.
-                // In case there is no entry in the tool table make a new one.
-                $timestamp = time();
-                if (!$DB->record_exists('tool_cleanupusers', ['id' => $user->id])) {
-                    $DB->insert_record_raw('tool_cleanupusers', ['id' => $user->id, 'archived' => 1,
-                        'timestamp' => $timestamp], true, false, true);
-                }
-                // Insert copy of user in second DB and replace user in main table when entry was successful.
-                if ($DB->record_exists('tool_cleanupusers_archive', ['id' => $shadowuser->id])) {
-                    $DB->delete_records('tool_cleanupusers_archive', ['id' => $shadowuser->id]);
-                }
-                $DB->insert_record_raw('tool_cleanupusers_archive', $shadowuser, true, false, true);
-                // Replaces the current user with a pseudo_user that has no reference.
-                $cloneuser = $this->give_suspended_pseudo_user($shadowuser->id, $timestamp);
-                user_update_user($cloneuser, false);
+        $transaction = $DB->start_delegated_transaction();
+        // Get the current user.
+        $user = \core_user::get_user($this->id);
+        if ($user->suspended == 1) {
+            throw new cleanupusers_exception("Failed to suspend " . $user->username .
+                " : user is already suspended");
+        } else if (!($user->username == \core_user::clean_field($user->username, 'username'))) {
+            throw new cleanupusers_exception("Failed to suspend " . $user->username .
+                " : username is not cleaned");
+        } else {
+            // We are already getting the shadowuser here to keep the original suspended status.
+            $shadowuser = clone $user;
+            // The user might be logged in, so we must kill his/her session.
+            $user->suspended = 1;
+            manager::kill_user_sessions($user->id);
+            user_update_user($user, false);
+            // Document time of editing user in Database.
+            // In case there is no entry in the tool table make a new one.
+            $timestamp = time();
+            if (!$DB->record_exists('tool_cleanupusers', ['id' => $user->id])) {
+                $DB->insert_record_raw('tool_cleanupusers', ['id' => $user->id, 'archived' => 1,
+                    'timestamp' => $timestamp], true, false, true);
             }
-            $transaction->allow_commit();
-        } catch (\Throwable $e) {
-            $transaction->rollback($e);
+            // Insert copy of user in second DB and replace user in main table when entry was successful.
+            if ($DB->record_exists('tool_cleanupusers_archive', ['id' => $shadowuser->id])) {
+                $DB->delete_records('tool_cleanupusers_archive', ['id' => $shadowuser->id]);
+            }
+            $DB->insert_record_raw('tool_cleanupusers_archive', $shadowuser, true, false, true);
+            // Replaces the current user with a pseudo_user that has no reference.
+            $cloneuser = $this->give_suspended_pseudo_user($shadowuser->id, $timestamp);
+            user_update_user($cloneuser, false);
         }
+        $transaction->allow_commit();
     }
 
     /**
      * Reactivates the user.
      * Therefore, deletes the entry in the tool_cleanupusers table and throws an exception when no entry is available.
-     * @throws \Throwable
+     * @throws cleanupusers_exception
      */
     public function activate_me() {
         global $DB;
-        try {
-            // Get the current user.
-            $user = \core_user::get_user($this->id);
-            $transaction = $DB->start_delegated_transaction();
-            // User was suspended by the plugin.
-            if ($DB->record_exists('tool_cleanupusers', ['id' => $user->id])) {
-                if (!$DB->record_exists('tool_cleanupusers_archive', ['id' => $user->id])) {
-                    throw new cleanupusers_exception("Failed to reactivate " . $user->username .
-                        " : user suspended by the plugin has no entry in archive");
-                } else {
-                    $shadowuser = $DB->get_record('tool_cleanupusers_archive', ['id' => $user->id]);
-                    if ($DB->record_exists('user', ['username' => $shadowuser->username])) {
-                        throw new cleanupusers_exception("Failed to reactivate " . $user->username .
-                            " : user suspended by the plugin already in user table");
-                    } else {
-                        // Both records exist, so we have a user which can be reactivated.
-                        // If the user is in table replace data.
-
-                        user_update_user($shadowuser, false);
-                        // Delete records from tool_cleanupusers and tool_cleanupusers_archive tables.
-                        $DB->delete_records('tool_cleanupusers', ['id' => $user->id]);
-                        $DB->delete_records('tool_cleanupusers_archive', ['id' => $user->id]);
-                    }
-                }
-            } else {
-                // User was suspended manually.
+        // Get the current user.
+        $user = \core_user::get_user($this->id);
+        $transaction = $DB->start_delegated_transaction();
+        // User was suspended by the plugin.
+        if ($DB->record_exists('tool_cleanupusers', ['id' => $user->id])) {
+            if (!$DB->record_exists('tool_cleanupusers_archive', ['id' => $user->id])) {
                 throw new cleanupusers_exception("Failed to reactivate " . $user->username .
-                    " : user not suspended by the plugin");
+                    " : user suspended by the plugin has no entry in archive");
+            } else {
+                $shadowuser = $DB->get_record('tool_cleanupusers_archive', ['id' => $user->id]);
+                if ($DB->record_exists('user', ['username' => $shadowuser->username])) {
+                    throw new cleanupusers_exception("Failed to reactivate " . $user->username .
+                        " : user suspended by the plugin already in user table");
+                } else {
+                    // Both records exist, so we have a user which can be reactivated.
+                    // If the user is in table replace data.
+                    user_update_user($shadowuser, false);
+                    // Delete records from tool_cleanupusers and tool_cleanupusers_archive tables.
+                    $DB->delete_records('tool_cleanupusers', ['id' => $user->id]);
+                    $DB->delete_records('tool_cleanupusers_archive', ['id' => $user->id]);
+                }
             }
-            $transaction->allow_commit();
-        } catch (\Throwable $e) {
-            $transaction->rollback($e);
+        } else {
+            // User was suspended manually.
+            throw new cleanupusers_exception("Failed to reactivate " . $user->username .
+                " : user not suspended by the plugin");
         }
+        $transaction->allow_commit();
     }
 
     /**
@@ -166,50 +157,46 @@ class archiveduser {
      * (2) Hashes the username with the sha256 function.
      * (3) Calls the moodle core delete_user function.
      *
-     * @throws \Throwable
+     * @throws cleanupusers_exception
      */
     public function delete_me() {
         global $DB;
-        try {
-            // Get the current user.
-            $user = \core_user::get_user($this->id);
-            $transaction = $DB->start_delegated_transaction();
-            // User was suspended by the plugin.
-            if ($DB->record_exists('tool_cleanupusers', ['id' => $user->id])) {
-                if (!$DB->record_exists('tool_cleanupusers_archive', ['id' => $user->id])) {
-                    throw new cleanupusers_exception("Failed to delete " . $user->username .
-                        " : user suspended by the plugin has no entry in archive");
-                } else {
-                    // Deletes the records in both plugin tables.
-                    $DB->delete_records('tool_cleanupusers', ['id' => $user->id]);
-                    $DB->delete_records('tool_cleanupusers_archive', ['id' => $user->id]);
-                }
-            } else {
-                // User was suspended manually.
+        $transaction = $DB->start_delegated_transaction();
+        // Get the current user.
+        $user = \core_user::get_user($this->id);
+        // User was suspended by the plugin.
+        if ($DB->record_exists('tool_cleanupusers', ['id' => $user->id])) {
+            if (!$DB->record_exists('tool_cleanupusers_archive', ['id' => $user->id])) {
                 throw new cleanupusers_exception("Failed to delete " . $user->username .
-                    " : user not suspended by the plugin");
+                    " : user suspended by the plugin has no entry in archive");
+            } else {
+                // Deletes the records in both plugin tables.
+                $DB->delete_records('tool_cleanupusers', ['id' => $user->id]);
+                $DB->delete_records('tool_cleanupusers_archive', ['id' => $user->id]);
             }
-            // To secure that plugins that reference the user table do not fail create empty user with a hash as username.
-            $newusername = hash('md5', $user->username);
-            // Checks whether the username already exist (possible but unlikely).
-            // In the unlikely case that hash(username) exist in the table, while loop generates new username.
-            while ($DB->record_exists('user', ["username" => $newusername])) {
-                $tempname = $newusername;
-                $newusername = hash('md5', $user->username . $tempname);
-            }
-            $user->username = $newusername;
-            user_update_user($user, false);
-            manager::kill_user_sessions($user->id);
-            // Core Function has to be executed finally.
-            // It can not be executed earlier since moodle then prevents further operations on the user.
-            // The Function adds @unknownemail.invalid. and a timestamp to the username.
-            // It is secured, that the username is below 100 characters since sha256 produces 64 characters and the...
-            // additional string has only 32 characters.
-            user_delete_user($user);
-            $transaction->allow_commit();
-        } catch (\Throwable $e) {
-            $transaction->rollback($e);
+        } else {
+            // User was suspended manually.
+            throw new cleanupusers_exception("Failed to delete " . $user->username .
+                " : user not suspended by the plugin");
         }
+        // To secure that plugins that reference the user table do not fail create empty user with a hash as username.
+        $newusername = hash('md5', $user->username);
+        // Checks whether the username already exist (possible but unlikely).
+        // In the unlikely case that hash(username) exist in the table, while loop generates new username.
+        while ($DB->record_exists('user', ["username" => $newusername])) {
+            $tempname = $newusername;
+            $newusername = hash('md5', $user->username . $tempname);
+        }
+        $user->username = $newusername;
+        user_update_user($user, false);
+        manager::kill_user_sessions($user->id);
+        // Core Function has to be executed finally.
+        // It can not be executed earlier since moodle then prevents further operations on the user.
+        // The Function adds @unknownemail.invalid. and a timestamp to the username.
+        // It is secured, that the username is below 100 characters since sha256 produces 64 characters and the...
+        // additional string has only 32 characters.
+        user_delete_user($user);
+        $transaction->allow_commit();
     }
 
     /**
